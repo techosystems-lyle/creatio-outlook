@@ -1,68 +1,112 @@
 import * as React from "react";
-import PropTypes from "prop-types";
 import Header from "./Header";
 import InputEnvironment from "./InputEnvironment";
 import Progress from "./Progress";
+import { DefaultButton } from "@fluentui/react";
+
+import axios from "axios";
 
 /* global require */
 
-export default class App extends React.Component {
-  constructor(props, context) {
-    super(props, context);
-    this.state = {
-      item: Office.context.mailbox.item,
-      settings: null,
-    };
-  }
+const App = ({ title, isOfficeInitialized }) => {
+  const [item, setItem] = React.useState(Office.context.mailbox.item);
+  const [settings, setSettings] = React.useState({
+    env: Office.context.roamingSettings.get("creatio_env"),
+    username: Office.context.roamingSettings.get("username"),
+    password: Office.context.roamingSettings.get("password"),
+  });
+  const [response, setResponse] = React.useState(null);
 
-  componentDidMount() {
-    this.setState({
-      settings: {
-        env: Office.context.roamingSettings.get("creatio_env"),
-      },
-    });
+  const axiosInstance = axios.create({
+    baseURL: `https://${settings.env}.creatio.com`,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, X-Requested-With, x-request-source'
+    }
+  });
 
+  React.useEffect(() => {
     Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, () => {
-      this.setState({ item: Office.context.mailbox.item });
+      setItem(Office.context.mailbox.item);
     });
-  }
+  }, []);
 
-  render() {
-    const { title, isOfficeInitialized } = this.props;
+  const tryLogin = ({ env, username, password }) => {
+    axiosInstance
+      .post("/ServiceModel/AuthService.svc/Login", {
+        UserName: username,
+        UserPassword: password,
+      })
+      .then(function (response) {
+        setSettings({ ...settings, env, username, password });
+        setResponse(response.toString());
+      })
+      .catch(function (error) {        
+        setResponse(error.toString());
+      });
+  };
 
-    if (!isOfficeInitialized) {
-      return (
+  return (
+    <React.Fragment>
+      {!isOfficeInitialized ? (
         <Progress
           title={title}
           logo={require("./../../../assets/logo-filled.png")}
           message="Please sideload your addin to see app body."
         />
-      );
-    }
+      ) : (
+        <div className="ms-welcome">
+          <Header logo={require("./../../../assets/logo-filled.png")} title={title} message="Welcome" />
+          {item.from.emailAddress}
+          <br />
+          {settings.env != null ? (
+            <div>
+              {settings.env}
+              <br />
+              <br />
+              {settings.username}
+              <br />
+              {settings.password}
+              <br />
+              <br />
+              <DefaultButton
+                className="ms-welcome__action"
+                iconProps={{ iconName: "ChevronRight" }}
+                onClick={() => {
+                  Office.context.roamingSettings.remove("creatio_env");
+                  Office.context.roamingSettings.remove("username");
+                  Office.context.roamingSettings.remove("password");
 
-    return (
-      <div className="ms-welcome">
-        <Header logo={require("./../../../assets/logo-filled.png")} title={this.props.title} message="Welcome" />
-        {this.state.settings && this.state.settings.env ? (
-          <div>{this.state.settings.env}</div>
-        ) : (
-          <InputEnvironment
-            onSave={async (value) => {
-              Office.context.roamingSettings.set("creatio_env", value);
-              Office.context.roamingSettings.saveAsync((asyncResult) => {
-                if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
-                  this.setState({ settings: { env: value } });
-                }                
-              });
-            }}
-          />
-        )}
-      </div>
-    );
-  }
-}
+                  Office.context.roamingSettings.saveAsync((asyncResult) => {
+                    if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
+                      setSettings({ ...settings, env: null, username: null, password: null });
+                    }
+                  });
+                }}
+              >
+                Clear settings
+              </DefaultButton>
+            </div>
+          ) : (
+            <InputEnvironment
+              onSave={async ({ env, username, password }) => {
+                Office.context.roamingSettings.set("creatio_env", env);
+                Office.context.roamingSettings.set("username", username);
+                Office.context.roamingSettings.set("password", password);
 
-App.propTypes = {
-  title: PropTypes.string,
-  isOfficeInitialized: PropTypes.bool,
+                Office.context.roamingSettings.saveAsync((asyncResult) => {
+                  if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
+                    tryLogin(settings);
+                  }
+                });
+              }}
+            />
+          )}
+        </div>
+      )}
+    </React.Fragment>
+  );
 };
+
+export default App;

@@ -1,34 +1,32 @@
 import * as React from "react";
-import PropTypes from "prop-types";
 
 import { DefaultButton } from "@fluentui/react";
 
-export default class InputEnvironment extends React.Component {
-  constructor(props, context) {
-    super(props, context);
-    this.state = {
-      envInput: "",
-    };
-  }
+const InputEnvironment = ({ onSave }) => {
+  const [env, setEnv] = React.useState("techosystems");
+  const [username, setUsername] = React.useState("lyle.quesada");
+  const [password, setPassword] = React.useState("Lylerman!1");
 
-  click = (value) => {
-    this.props.onSave(this.state.envInput);
+  const click = () => {
+    onSave({
+      env,
+      username,
+      password,
+    });
   };
 
-  render() {
-    const { onSave } = this.props;
-
-    return (
-      <main className="ms-welcome__main">
-        <input type="text" value={this.state.envInput} onChange={(e) => this.setState({ envInput: e.target.value })} />
-        <DefaultButton className="ms-welcome__action" iconProps={{ iconName: "ChevronRight" }} onClick={this.click}>
-          Run
-        </DefaultButton>
-      </main>
-    );
-  }
-}
-
-InputEnvironment.propTypes = {
-  onSave: PropTypes.func,
+  return (
+    <main className="ms-welcome__main">
+      <input type="text" placeholder="Creatio environment" value={env} onChange={(e) => setEnv(e.target.value)} />
+      <br />
+      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <br />
+      <DefaultButton className="ms-welcome__action" iconProps={{ iconName: "ChevronRight" }} onClick={click}>
+        Run
+      </DefaultButton>
+    </main>
+  );
 };
+
+export default InputEnvironment;
