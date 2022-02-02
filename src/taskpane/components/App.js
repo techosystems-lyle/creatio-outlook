@@ -20,9 +20,9 @@ const App = ({ title, isOfficeInitialized }) => {
   const axiosInstance = axios.create({
     baseURL: `https://${settings.env}.creatio.com`,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, X-Requested-With, x-request-source'
+      'Accept': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
+      'ForceUseSession': 'true'
     }
   });
 
@@ -60,6 +60,8 @@ const App = ({ title, isOfficeInitialized }) => {
           <Header logo={require("./../../../assets/logo-filled.png")} title={title} message="Welcome" />
           {item.from.emailAddress}
           <br />
+          {response}
+          <br/>
           {settings.env != null ? (
             <div>
               {settings.env}

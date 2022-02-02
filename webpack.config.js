@@ -98,8 +98,6 @@ module.exports = async (env, options) => {
       hot: true,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-        "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
       },
       https: env.WEBPACK_BUILD || options.https !== undefined ? options.https : await getHttpsOptions(),
       port: process.env.npm_package_config_dev_server_port || 3000,
